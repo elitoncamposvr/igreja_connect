@@ -57,9 +57,9 @@ class Member extends Model
         return $this->belongsTo(Church::class);
     }
 
-    public function congregrations(): BelongsTo
+    public function congregations(): BelongsTo
     {
-        return $this->belongsTo(Congregration::class);
+        return $this->belongsTo(Congregation::class);
     }
 
     public function families(): BelongsToMany

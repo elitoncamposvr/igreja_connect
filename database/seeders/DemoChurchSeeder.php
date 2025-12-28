@@ -32,11 +32,9 @@ class DemoChurchSeeder extends Seeder
         // 2. Criar configurações
         $this->createChurchSettings();
 
-        // 3. Criar categorias financeiras
-        $this->createCategories();
-
-        // 4. Criar métodos de pagamento
-        $this->createPaymentMethods();
+        $this->call(CategorySeeder::class, false, ['church' => $this->church]);
+        $this->call(PaymentMethodSeeder::class, false, ['church' => $this->church]);
+        $this->call(MessageTemplateSeeder::class, false, ['church' => $this->church]);
 
         // 5. Criar usuários administrativos
         $this->createUsers();
@@ -56,8 +54,7 @@ class DemoChurchSeeder extends Seeder
         // 10. Criar eventos
         $this->createEvents();
 
-        // 11. Criar templates de mensagens
-        $this->createMessageTemplates();
+
     }
 
     private function createChurch(): void
