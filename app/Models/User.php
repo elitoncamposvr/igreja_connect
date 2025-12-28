@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Models\Role;
-use Laravel\Sanctum\HasApiTokens;
+//use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, softDeletes, HasApiTokens;
+    use HasFactory, Notifiable, softDeletes;
 
     protected $fillable = [
         'church_id',

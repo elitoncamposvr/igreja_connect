@@ -12,7 +12,7 @@ return new class extends Migration
         Schema::create('members', function (Blueprint $table) {
             $table->id();
             $table->foreignId('church_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('congregation_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('congregation_id')->nullable()->constrained()->cascadeOnDelete();
 
             $table->string('name');
             $table->string('email')->nullable();

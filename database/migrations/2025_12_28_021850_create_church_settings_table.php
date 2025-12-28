@@ -29,7 +29,7 @@ return new class extends Migration
             $table->boolean('require_cpf')->default(false);
 
             $table->boolean('enable_attendance_control')->default(true);
-            $table->boolean('require_qr_code_checking')->default(false);
+            $table->boolean('require_qr_code_checkin')->default(false);
 
             $table->string('timezone')->default('America/Sao_Paulo');
 

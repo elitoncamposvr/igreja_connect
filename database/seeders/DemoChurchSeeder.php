@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Seeders;
+
 use App\Models\Church;
 use App\Models\ChurchSettings;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\PaymentMethod;
 use App\Models\Transaction;
 use App\Models\Donation;
 use App\Models\Event;
+use App\Models\EventAttendance;
 use App\Models\MessageTemplate;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
@@ -26,39 +28,50 @@ class DemoChurchSeeder extends Seeder
 
     public function run(): void
     {
+        $this->command->info('🏛️  Criando igreja de demonstração...');
+        $this->command->newLine();
+
         // 1. Criar igreja
         $this->createChurch();
 
         // 2. Criar configurações
         $this->createChurchSettings();
 
-        $this->call(CategorySeeder::class, false, ['church' => $this->church]);
-        $this->call(PaymentMethodSeeder::class, false, ['church' => $this->church]);
-        $this->call(MessageTemplateSeeder::class, false, ['church' => $this->church]);
+        // 3. Criar categorias financeiras (INLINE - não chamar seeder separado)
+        $this->createCategories();
 
-        // 5. Criar usuários administrativos
+        // 4. Criar métodos de pagamento (INLINE)
+        $this->createPaymentMethods();
+
+        // 5. Criar templates de mensagens (INLINE)
+        $this->createMessageTemplates();
+
+        // 6. Criar usuários administrativos
         $this->createUsers();
 
-        // 6. Criar membros
+        // 7. Criar membros
         $this->createMembers();
 
-        // 7. Criar famílias
+        // 8. Criar famílias
         $this->createFamilies();
 
-        // 8. Criar doações
+        // 9. Criar doações
         $this->createDonations();
 
-        // 9. Criar transações
+        // 10. Criar transações
         $this->createTransactions();
 
-        // 10. Criar eventos
+        // 11. Criar eventos
         $this->createEvents();
 
-
+        $this->command->newLine();
+        $this->command->info('✅ Igreja de demonstração criada com sucesso!');
     }
 
     private function createChurch(): void
     {
+        $this->command->info('📍 Criando igreja...');
+
         $this->church = Church::create([
             'name' => 'Igreja Batista Central',
             'slug' => 'igreja-batista-central',
@@ -85,10 +98,14 @@ class DemoChurchSeeder extends Seeder
             'subscription_ends_at' => now()->addMonths(6),
             'is_trial' => false,
         ]);
+
+        $this->command->info("   ✓ Igreja '{$this->church->name}' criada");
     }
 
     private function createChurchSettings(): void
     {
+        $this->command->info('⚙️  Criando configurações...');
+
         ChurchSettings::create([
             'church_id' => $this->church->id,
 
@@ -117,10 +134,14 @@ class DemoChurchSeeder extends Seeder
 
             'timezone' => 'America/Fortaleza',
         ]);
+
+        $this->command->info('   ✓ Configurações criadas');
     }
 
     private function createCategories(): void
     {
+        $this->command->info('💰 Criando categorias financeiras...');
+
         $incomeCategories = [
             ['name' => 'Dízimos', 'color' => '#10B981'],
             ['name' => 'Ofertas', 'color' => '#3B82F6'],
@@ -163,10 +184,14 @@ class DemoChurchSeeder extends Seeder
                 'is_default' => true,
             ]);
         }
+
+        $this->command->info('   ✓ ' . count($this->categories) . ' categorias criadas');
     }
 
     private function createPaymentMethods(): void
     {
+        $this->command->info('💳 Criando métodos de pagamento...');
+
         $methods = [
             ['name' => 'Dinheiro', 'type' => 'cash'],
             ['name' => 'PIX', 'type' => 'pix'],
@@ -185,10 +210,59 @@ class DemoChurchSeeder extends Seeder
                 'is_active' => true,
             ]);
         }
+
+        $this->command->info('   ✓ ' . count($this->paymentMethods) . ' métodos criados');
+    }
+
+    private function createMessageTemplates(): void
+    {
+        $this->command->info('📱 Criando templates de mensagens...');
+
+        $templates = [
+            [
+                'name' => 'Boas-vindas Novo Membro',
+                'slug' => 'boas-vindas',
+                'type' => 'welcome',
+                'content' => 'Olá {{name}}! 🙏 Seja muito bem-vindo(a) à {{church_name}}!',
+            ],
+            [
+                'name' => 'Aniversário',
+                'slug' => 'aniversario',
+                'type' => 'birthday',
+                'content' => 'Feliz aniversário, {{name}}! 🎉🎂',
+            ],
+            [
+                'name' => 'Agradecimento Doação',
+                'slug' => 'agradecimento-doacao',
+                'type' => 'donation_thanks',
+                'content' => 'Obrigado pela sua doação de R$ {{amount}}! 🙏',
+            ],
+            [
+                'name' => 'Lembrete de Evento',
+                'slug' => 'lembrete-evento',
+                'type' => 'event_reminder',
+                'content' => 'Lembrete: {{event_name}} amanhã às {{event_time}}!',
+            ],
+        ];
+
+        foreach ($templates as $template) {
+            MessageTemplate::create([
+                'church_id' => $this->church->id,
+                'name' => $template['name'],
+                'slug' => $template['slug'],
+                'type' => $template['type'],
+                'content' => $template['content'],
+                'is_active' => true,
+            ]);
+        }
+
+        $this->command->info('   ✓ ' . count($templates) . ' templates criados');
     }
 
     private function createUsers(): void
     {
+        $this->command->info('👥 Criando usuários administrativos...');
+
         // Pastor (admin total)
         $pastor = User::create([
             'church_id' => $this->church->id,
@@ -224,10 +298,14 @@ class DemoChurchSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $secretary->roles()->attach(Role::where('slug', 'secretario')->first()->id);
+
+        $this->command->info('   ✓ 3 usuários criados');
     }
 
     private function createMembers(): void
     {
+        $this->command->info('👨‍👩‍👧‍👦 Criando membros...');
+
         $memberNames = [
             ['name' => 'Pedro Alves', 'email' => 'pedro@email.com', 'status' => 'member'],
             ['name' => 'Ana Costa', 'email' => 'ana@email.com', 'status' => 'member'],
@@ -244,6 +322,7 @@ class DemoChurchSeeder extends Seeder
         foreach ($memberNames as $index => $memberData) {
             $this->members[] = Member::create([
                 'church_id' => $this->church->id,
+                'congregation_id' => null, // ← SEMPRE NULL no demo
                 'name' => $memberData['name'],
                 'email' => $memberData['email'],
                 'phone' => sprintf('(83) 9%04d-%04d', 8000 + $index, 1000 + $index),
@@ -261,18 +340,22 @@ class DemoChurchSeeder extends Seeder
                 'membership_date' => now()->subYears(rand(1, 8)),
                 'marital_status' => ['single', 'married', 'married', 'married'][rand(0, 3)],
                 'street' => 'Rua ' . chr(65 + $index),
-                'number' => rand(100, 999),
+                'number' => (string) rand(100, 999),
                 'neighborhood' => ['Centro', 'Catolé', 'Bodocongó', 'Prata'][rand(0, 3)],
                 'city' => 'Campina Grande',
                 'state' => 'PB',
-                'zip_code' => '58400-' . str_pad($index * 10, 3, '0', STR_PAD_LEFT),
+                'zip_code' => '58400-' . str_pad((string)($index * 10), 3, '0', STR_PAD_LEFT),
                 'password' => Hash::make('password'),
             ]);
         }
+
+        $this->command->info('   ✓ ' . count($this->members) . ' membros criados');
     }
 
     private function createFamilies(): void
     {
+        $this->command->info('👨‍👩‍👧 Criando famílias...');
+
         // Família 1: Pedro e Ana
         $family1 = Family::create([
             'church_id' => $this->church->id,
@@ -299,17 +382,20 @@ class DemoChurchSeeder extends Seeder
         ]);
         $family3->members()->attach($this->members[4]->id, ['relationship' => 'head']);
         $family3->members()->attach($this->members[5]->id, ['relationship' => 'spouse']);
+
+        $this->command->info('   ✓ 3 famílias criadas');
     }
 
     private function createDonations(): void
     {
-        $titheCategory = Category::where('church_id', $this->church->id)
-            ->where('slug', 'dizimos')
-            ->first();
+        $this->command->info('💵 Criando doações...');
 
-        $offeringCategory = Category::where('church_id', $this->church->id)
-            ->where('slug', 'ofertas')
-            ->first();
+        if (empty($this->members) || empty($this->paymentMethods)) {
+            $this->command->warn('   ⚠ Doações não criadas: membros ou métodos de pagamento ausentes.');
+            return;
+        }
+
+        $count = 0;
 
         // Criar doações dos últimos 6 meses
         for ($month = 0; $month < 6; $month++) {
@@ -317,106 +403,144 @@ class DemoChurchSeeder extends Seeder
 
             // Cada membro doa 1-2 vezes por mês
             foreach (array_slice($this->members, 0, 6) as $member) {
+                // Escolher método aleatório seguro
+                $randomMethod = $this->paymentMethods[array_rand($this->paymentMethods)];
+
                 // Dízimo
                 Donation::create([
                     'church_id' => $this->church->id,
                     'member_id' => $member->id,
-                    'payment_method_id' => $this->paymentMethods[rand(0, 3)]->id,
+                    'payment_method_id' => $randomMethod->id,
                     'type' => 'tithe',
                     'amount' => rand(100, 500),
                     'donated_at' => $date->copy()->addDays(rand(1, 15)),
                     'payment_status' => 'confirmed',
-                    'receipt_issued' => rand(0, 1) === 1,
+                    'receipt_issued' => (bool)rand(0, 1),
                 ]);
+                $count++;
 
                 // Oferta (50% de chance)
                 if (rand(0, 1) === 1) {
+                    $randomMethod2 = $this->paymentMethods[array_rand($this->paymentMethods)];
+
                     Donation::create([
                         'church_id' => $this->church->id,
                         'member_id' => $member->id,
-                        'payment_method_id' => $this->paymentMethods[rand(0, 3)]->id,
+                        'payment_method_id' => $randomMethod2->id,
                         'type' => 'offering',
                         'amount' => rand(20, 100),
                         'donated_at' => $date->copy()->addDays(rand(16, 28)),
                         'payment_status' => 'confirmed',
                         'receipt_issued' => false,
                     ]);
+                    $count++;
                 }
             }
         }
+
+        $this->command->info("   ✓ {$count} doações criadas");
     }
 
     private function createTransactions(): void
     {
-        $expenseCategories = Category::where('church_id', $this->church->id)
-            ->where('type', 'expense')
-            ->get();
+        $this->command->info('💸 Criando transações...');
 
+        if (empty($this->paymentMethods)) {
+            $this->command->warn('   ⚠ Transações não criadas: métodos de pagamento ausentes.');
+            return;
+        }
+
+        $expenseCategories = collect($this->categories)->where('type', 'expense');
         $user = User::where('church_id', $this->church->id)->first();
+
+        // Método de pagamento padrão (primeiro do array)
+        $defaultPaymentMethod = $this->paymentMethods[0];
+
+        $count = 0;
 
         // Despesas mensais dos últimos 6 meses
         for ($month = 0; $month < 6; $month++) {
             $date = now()->subMonths($month);
 
             // Aluguel
-            Transaction::create([
-                'church_id' => $this->church->id,
-                'category_id' => $expenseCategories->where('slug', 'aluguel')->first()->id,
-                'payment_method_id' => $this->paymentMethods[4]->id, // Transferência
-                'user_id' => $user->id,
-                'type' => 'expense',
-                'amount' => 2000.00,
-                'description' => 'Aluguel do templo - ' . $date->format('m/Y'),
-                'transaction_date' => $date->copy()->day(5),
-                'status' => 'completed',
-            ]);
+            $aluguel = $expenseCategories->firstWhere('slug', 'aluguel');
+            if ($aluguel) {
+                Transaction::create([
+                    'church_id' => $this->church->id,
+                    'category_id' => $aluguel->id,
+                    'payment_method_id' => $defaultPaymentMethod->id,
+                    'user_id' => $user->id,
+                    'type' => 'expense',
+                    'amount' => 2000.00,
+                    'description' => 'Aluguel do templo - ' . $date->format('m/Y'),
+                    'transaction_date' => $date->copy()->day(5),
+                    'status' => 'completed',
+                ]);
+                $count++;
+            }
 
             // Água
-            Transaction::create([
-                'church_id' => $this->church->id,
-                'category_id' => $expenseCategories->where('slug', 'agua')->first()->id,
-                'payment_method_id' => $this->paymentMethods[4]->id,
-                'user_id' => $user->id,
-                'type' => 'expense',
-                'amount' => rand(80, 150),
-                'description' => 'Conta de água - ' . $date->format('m/Y'),
-                'transaction_date' => $date->copy()->day(10),
-                'status' => 'completed',
-            ]);
+            $agua = $expenseCategories->firstWhere('slug', 'agua');
+            if ($agua) {
+                Transaction::create([
+                    'church_id' => $this->church->id,
+                    'category_id' => $agua->id,
+                    'payment_method_id' => $defaultPaymentMethod->id,
+                    'user_id' => $user->id,
+                    'type' => 'expense',
+                    'amount' => rand(80, 150),
+                    'description' => 'Conta de água - ' . $date->format('m/Y'),
+                    'transaction_date' => $date->copy()->day(10),
+                    'status' => 'completed',
+                ]);
+                $count++;
+            }
 
             // Energia
-            Transaction::create([
-                'church_id' => $this->church->id,
-                'category_id' => $expenseCategories->where('slug', 'energia-eletrica')->first()->id,
-                'payment_method_id' => $this->paymentMethods[4]->id,
-                'user_id' => $user->id,
-                'type' => 'expense',
-                'amount' => rand(300, 500),
-                'description' => 'Conta de luz - ' . $date->format('m/Y'),
-                'transaction_date' => $date->copy()->day(15),
-                'status' => 'completed',
-            ]);
+            $energia = $expenseCategories->firstWhere('slug', 'energia-eletrica');
+            if ($energia) {
+                Transaction::create([
+                    'church_id' => $this->church->id,
+                    'category_id' => $energia->id,
+                    'payment_method_id' => $defaultPaymentMethod->id,
+                    'user_id' => $user->id,
+                    'type' => 'expense',
+                    'amount' => rand(300, 500),
+                    'description' => 'Conta de luz - ' . $date->format('m/Y'),
+                    'transaction_date' => $date->copy()->day(15),
+                    'status' => 'completed',
+                ]);
+                $count++;
+            }
 
             // Internet
-            Transaction::create([
-                'church_id' => $this->church->id,
-                'category_id' => $expenseCategories->where('slug', 'internet')->first()->id,
-                'payment_method_id' => $this->paymentMethods[4]->id,
-                'user_id' => $user->id,
-                'type' => 'expense',
-                'amount' => 99.90,
-                'description' => 'Internet - ' . $date->format('m/Y'),
-                'transaction_date' => $date->copy()->day(20),
-                'status' => 'completed',
-            ]);
+            $internet = $expenseCategories->firstWhere('slug', 'internet');
+            if ($internet) {
+                Transaction::create([
+                    'church_id' => $this->church->id,
+                    'category_id' => $internet->id,
+                    'payment_method_id' => $defaultPaymentMethod->id,
+                    'user_id' => $user->id,
+                    'type' => 'expense',
+                    'amount' => 99.90,
+                    'description' => 'Internet - ' . $date->format('m/Y'),
+                    'transaction_date' => $date->copy()->day(20),
+                    'status' => 'completed',
+                ]);
+                $count++;
+            }
         }
+
+        $this->command->info("   ✓ {$count} transações criadas");
     }
 
     private function createEvents(): void
     {
-        $user = User::where('church_id', $this->church->id)->first();
+        $this->command->info('📅 Criando eventos...');
 
-        // Cultos semanais (domingos às 19h)
+        $count = 0;
+
+        // Cultos semanais (domingos às 19h) - últimas 8 semanas
         for ($week = 0; $week < 8; $week++) {
             $date = now()->subWeeks($week)->startOfWeek()->addDays(6)->setTime(19, 0);
 
@@ -434,12 +558,14 @@ class DemoChurchSeeder extends Seeder
                 'track_attendance' => true,
                 'expected_attendees' => 80,
             ]);
+            $count++;
 
             // Adicionar presenças para eventos passados
             if ($date->isPast()) {
                 $attendees = array_slice($this->members, 0, rand(50, 70));
                 foreach ($attendees as $member) {
-                    $event->attendances()->create([
+                    EventAttendance::create([
+                        'event_id' => $event->id,
                         'member_id' => $member->id,
                         'checked_in_at' => $date->copy()->addMinutes(rand(-10, 15)),
                         'status' => 'present',
@@ -448,7 +574,7 @@ class DemoChurchSeeder extends Seeder
             }
         }
 
-        // Células semanais (quartas às 20h)
+        // Células semanais (quartas às 20h) - últimas 4 semanas
         for ($week = 0; $week < 4; $week++) {
             $date = now()->subWeeks($week)->startOfWeek()->addDays(2)->setTime(20, 0);
 
@@ -466,6 +592,7 @@ class DemoChurchSeeder extends Seeder
                 'track_attendance' => true,
                 'expected_attendees' => 15,
             ]);
+            $count++;
         }
 
         // Evento especial futuro
@@ -482,46 +609,8 @@ class DemoChurchSeeder extends Seeder
             'track_attendance' => true,
             'expected_attendees' => 200,
         ]);
-    }
+        $count++;
 
-    private function createMessageTemplates(): void
-    {
-        $templates = [
-            [
-                'name' => 'Boas-vindas Novo Membro',
-                'slug' => 'boas-vindas',
-                'type' => 'welcome',
-                'content' => 'Olá {{name}}! 🙏 Seja muito bem-vindo(a) à {{church_name}}! Estamos muito felizes em ter você conosco. Qualquer dúvida, estamos à disposição!',
-            ],
-            [
-                'name' => 'Aniversário',
-                'slug' => 'aniversario',
-                'type' => 'birthday',
-                'content' => 'Feliz aniversário, {{name}}! 🎉🎂 Que Deus abençoe sua vida ricamente neste novo ano! Toda a {{church_name}} celebra com você!',
-            ],
-            [
-                'name' => 'Agradecimento Doação',
-                'slug' => 'agradecimento-doacao',
-                'type' => 'donation_thanks',
-                'content' => 'Olá {{name}}, obrigado pela sua doação de R$ {{amount}}! Sua generosidade nos ajuda a continuar o trabalho de Deus. Que Ele multiplique em sua vida! 🙏',
-            ],
-            [
-                'name' => 'Lembrete de Evento',
-                'slug' => 'lembrete-evento',
-                'type' => 'event_reminder',
-                'content' => 'Olá {{name}}! Lembramos que temos {{event_name}} amanhã às {{event_time}}. Contamos com sua presença! Local: {{event_location}}',
-            ],
-        ];
-
-        foreach ($templates as $template) {
-            MessageTemplate::create([
-                'church_id' => $this->church->id,
-                'name' => $template['name'],
-                'slug' => $template['slug'],
-                'type' => $template['type'],
-                'content' => $template['content'],
-                'is_active' => true,
-            ]);
-        }
+        $this->command->info("   ✓ {$count} eventos criados");
     }
 }
