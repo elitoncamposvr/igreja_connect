@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class MessageTemplate extends Model
+{
+    protected $fillable = [
+        'church_id',
+        'name',
+        'slug',
+        'content',
+        'type',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function church(): BelongsTo
+    {
+        return $this->belongsTo(Church::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active',true);
+    }
+
+    public function render(array $variables = []): string
+    {
+        $content = $this->content;
+
+        foreach ($variables as $key => $value) {
+            $content = str_replace('{{' . $key . '}}', $value, $content);
+        }
+
+        return $content;
+    }
+}
